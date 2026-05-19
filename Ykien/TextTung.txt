@@ -1,0 +1,35 @@
+- Stack Overflow: 
+    + Dữ liệu nói về góc nhìn tổng quan về vòng đời hành vi và xu hướng của lực lượng lao động ngành công nghệ thông tin toàn cầu 
+        1. Có biểu hiện thông số bản đồ về công nghệ ở hiện tại và tương lai của thế giới (ngôn ngữ nào đang thống trị thị trường, công nghệ nào đang thoái trào, xu hướng sử dụng cơ sở hạ tầng).
+        2. Có dữ liệu về thông tin về AI.(Sử dụng AI nào ? AI giúp ích như thế nào ?)
+        3. có thể phân tích môi trường vận hành và trải nghiệm của các kỹ sư, dữ liệu cho phép khai thác về hiệu suất nhân sự trong doanh nghiệp. và có đánh giá chỉ số hài lòng tổng thể (JobSat)
+        4. Dữ liệu tươg tác của cộng đồng xếp hạng sử dụng Stack Overflow để phát triển hay để chữa cháy
+
+- Credit Risk:
+    + Dữ liệu nói về lịch sử phê duyệt khoản vay của ngân hàng, thông tin khách hàng đăng ký vay tiền.
+        1. Hình thành được chân dung tài chính và năng lực hành vi cá nhân, các trường có chỉ số phản ánh sức khoẻ tài chính và độ ổn định
+        2. Cấu trúc và mục đích của dòng vốn.
+        3. Lịch sử tín dụng và có ma trận rủi ro thông qua các chỉ số tín dụng và lịch sử nợ xấu.
+        4. Dữ liệu phân tích chủ yếu dựa vào trường "loan_status"(trạng thái nợ "nợ xấu hay tất toán") để có thể phê duyệt hoặc từ chối các khoản văn
+
+Cấu trúc của 2 bộ dữ liệu 
+    - Stack Overflow nói về câu chuyện Con người và công nghệ (khảo sát tâm lý hành vi con người)
+    - Credit Risk nói về câu chuyện Con người và tiền bạc (Bài toán phân loại rủi ro tài chính)
+
+--------------------------------------------------------------------------------------------------------------
+
+Hướng rẽ của 2 bộ dữ liệu :
+    - Stack Overflow cực kỳ rộng vì có hơn 100 trường để khai thác dữ liệu nhưng bù lại rất loạn phải xử lý dữ liệu, định dạng văn bản phức tạm.
+    - Credit Risk tập trung vào chủ đề nhất định khá khó để rẽ nếu không có ý tưởng nhưng bù lại dữ liệu đã xử lý sạch sẽ và nhắm vào các dữ liệu số.
+
+--------------------------------------------------------------------------------------------------------------
+
+Khả năng làm :
+    - Cả 2 đều ổn, nhưng làm đỡ mệt hơn thì sẽ là Credit Risk vì bỏ qua luôn bước tiền xử lý dữ liệu 
+    - +1 cho Stack Overflow vì có nhiều thử thách 
+
+--------------------------------------------------------------------------------------------------------------
+
+Độ thích :
+    Stack Overflow ★★★★☆
+    Credit Risk ★★★★
