@@ -1,7 +1,10 @@
+from dotenv import load_dotenv
+
 from src.elt.pipeline import ELTPipeline
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+load_dotenv()
 
 
 def main() -> None:
