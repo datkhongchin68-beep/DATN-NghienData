@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Optional
 
-from .extract import download_kaggle_file
+from .extract.fetch_data import download_kaggle_file
+from .extract.monitor_data import CreditDataValidator
 from .transform.convert_xls_to_csv import convert_xls_to_csv
 from src.utils.logger import get_logger
 
@@ -16,60 +17,67 @@ class ELTPipeline:
     with Kaggle dataset extraction and followed by transformation.
     """
 
-    KAGGLE_DATASET = "tahmidmir/credit-risk-dataset"
-    TARGET_FILE = "train-FIN_ANA_DATA%20.xls"
-    DOWNLOAD_PATH = "Credit_Risk_Data_Set/train-FIN_ANA_DATA%20.xls"
+    KAGGLE_DATASET = "alexdister/credit-risk-dataset"
+    TARGET_FILE = "Credit%20Risk%20Data.csv"
     RAW_DATA_DIR = "data/raw"
+    PROCESSED_DATA_DIR = "data/processed"
     TRANSFORMED_FILE = "transformed.csv"
 
-    def __init__(self, raw_data_dir: str = RAW_DATA_DIR) -> None:
+    def __init__(self, raw_data_dir: str = RAW_DATA_DIR, processed_data_dir: str = PROCESSED_DATA_DIR) -> None:
         """
         Initialize the ELT pipeline.
 
         Args:
             raw_data_dir (str): Directory for storing raw data.
-                               Defaults to 'data/raw'.
+            processed_data_dir (str): Directory for storing processed/clean data.
         """
         self.raw_data_dir = raw_data_dir
+        self.processed_data_dir = processed_data_dir
         self.raw_data_path: Optional[Path] = None
         self.transformed_data_path: Optional[Path] = None
 
     def extract(self) -> bool:
         """
-        Execute the Extract phase of the pipeline.
-
-        Downloads the required dataset from Kaggle if it doesn't already exist.
-
-        Returns:
-            bool: True if extraction was successful, False otherwise.
+        Execute the Extract phase.
+        Downloads the dataset and scans for quality issues.
         """
         logger.info("=" * 60)
         logger.info("Starting ELT Pipeline - Extract Phase")
         logger.info("=" * 60)
 
         try:
-            logger.info(
-                f"Attempting to download '{self.TARGET_FILE}' from "
-                f"'{self.KAGGLE_DATASET}' to '{self.raw_data_dir}'"
-            )
-
-            # Call the download function from extract module
+            # 1. Download
             self.raw_data_path = download_kaggle_file(
                 dataset_name=self.KAGGLE_DATASET,
                 file_name=self.TARGET_FILE,
-                download_path=self.DOWNLOAD_PATH,
                 destination_dir=self.raw_data_dir
             )
 
-            if self.raw_data_path:
-                logger.info(
-                    f"Extract phase completed successfully. "
-                    f"Data available at: {self.raw_data_path.resolve()}"
-                )
-                return True
-            else:
+            if not self.raw_data_path:
                 logger.error("Extract phase failed - file could not be obtained")
                 return False
+
+            # 2. Scan and Report
+            import pandas as pd
+            file_to_scan = self.raw_data_path
+            if file_to_scan.is_dir():
+                files = list(file_to_scan.glob("*.csv")) + list(file_to_scan.glob("*.xls"))
+                if not files:
+                    logger.error("No data files found for scanning.")
+                    return False
+                file_to_scan = files[0]
+
+            logger.info(f"Scanning raw data: {file_to_scan}")
+            if file_to_scan.suffix.lower() == '.csv':
+                df = pd.read_csv(file_to_scan)
+            else:
+                df = pd.read_excel(file_to_scan, engine='xlrd' if file_to_scan.suffix.lower() == '.xls' else None)
+
+            validator = CreditDataValidator()
+            validator.report_issues(df)
+
+            logger.info("Extract phase completed successfully.")
+            return True
 
         except Exception as e:
             logger.error(f"Unexpected error during extract phase: {e}", exc_info=True)
@@ -77,36 +85,53 @@ class ELTPipeline:
 
     def transform(self) -> bool:
         """
-        Execute the Transform phase of the pipeline.
-
-        Converts the downloaded .xls file to a clean .csv format.
-
-        Returns:
-            bool: True if transformation was successful, False otherwise.
+        Execute the Transform phase.
+        Converts XLS to CSV (if needed) and segregates data into clean/quarantine (Feature 2).
         """
         logger.info("=" * 60)
         logger.info("Starting ELT Pipeline - Transform Phase")
         logger.info("=" * 60)
 
         if not self.raw_data_path:
-            logger.error("Transform phase failed - no raw data path available. Run extract() first.")
+            logger.error("Transform phase failed - no raw data path available.")
             return False
 
         try:
-            output_path = Path(self.raw_data_dir) / self.TRANSFORMED_FILE
+            import pandas as pd
             
-            success = convert_xls_to_csv(
-                input_path=str(self.raw_data_path),
-                output_path=str(output_path)
-            )
+            # 1. Identify input file
+            input_file = self.raw_data_path
+            if input_file.is_dir():
+                files = list(input_file.glob("*.csv")) + list(input_file.glob("*.xls"))
+                if not files:
+                    logger.error("No data files found for transformation.")
+                    return False
+                input_file = files[0]
 
-            if success:
-                self.transformed_data_path = output_path
-                logger.info(f"Transform phase completed successfully. CSV saved at: {output_path}")
-                return True
+            # 2. Check for bypass: If already CSV, don't call conversion
+            if input_file.suffix.lower() == '.csv':
+                logger.info(f"Bypassing conversion: {input_file.name} is already in CSV format.")
+                working_csv = input_file
             else:
-                logger.error("Transform phase failed during XLS to CSV conversion")
-                return False
+                interim_csv = Path(self.raw_data_dir) / self.TRANSFORMED_FILE
+                success = convert_xls_to_csv(
+                    input_path=str(input_file),
+                    output_path=str(interim_csv)
+                )
+                if not success:
+                    logger.error("Transform phase failed during XLS to CSV conversion")
+                    return False
+                working_csv = interim_csv
+
+            # 3. Segregate and Save to data/processed (Feature 2)
+            logger.info(f"Loading data from {working_csv} for segregation...")
+            df = pd.read_csv(working_csv)
+            validator = CreditDataValidator()
+            df_clean, _ = validator.segregate_and_save(df, output_dir=self.processed_data_dir)
+
+            self.transformed_data_path = Path(self.processed_data_dir) / "df_clean.csv"
+            logger.info(f"Transform phase successful. Clean data saved at: {self.transformed_data_path}")
+            return True
 
         except Exception as e:
             logger.error(f"Unexpected error during transform phase: {e}", exc_info=True)
@@ -115,22 +140,13 @@ class ELTPipeline:
     def run(self) -> bool:
         """
         Execute the complete ELT pipeline.
-
-        Implements Extract and Transform phases.
-
-        Returns:
-            bool: True if the entire pipeline succeeds, False otherwise.
         """
         logger.info("Initializing ELT Pipeline")
 
-        # 1. Execute Extract phase
         if not self.extract():
-            logger.error("Pipeline failed during Extract phase")
             return False
 
-        # 2. Execute Transform phase
         if not self.transform():
-            logger.error("Pipeline failed during Transform phase")
             return False
 
         logger.info("=" * 60)

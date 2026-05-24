@@ -3,8 +3,11 @@ from dotenv import load_dotenv
 from src.elt.pipeline import ELTPipeline
 from src.utils.logger import get_logger
 
-logger = get_logger(__name__)
+# Load environment variables from .env file
 load_dotenv()
+
+# Config logger
+logger = get_logger(__name__)
 
 
 def main() -> None:
