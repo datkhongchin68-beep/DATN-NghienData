@@ -18,7 +18,7 @@ class CreditDataValidator:
         """
         self.rules = [
             {"id": "R1_AGE", "desc": "Age must be between 18 and 85", "check": lambda df: df['person_age'].between(18, 85)},
-            {"id": "R2_EXPERIENCE", "desc": "Employment length cannot exceed (Age - 18)", "check": lambda df: df['person_emp_length'] <= (df['person_age'] - 18)},
+            {"id": "R2_EXPERIENCE", "desc": "Employment length cannot exceed (Age - 16)", "check": lambda df: df['person_emp_length'] <= (df['person_age'] - 16)},
             {"id": "R3_CREDIT_HIST", "desc": "Credit history length cannot exceed (Age - 18)", "check": lambda df: df['cb_person_cred_hist_length'] <= (df['person_age'] - 18)},
             {"id": "R4_FINANCIALS", "desc": "Income and Loan amount must be > 0", "check": lambda df: (df['person_income'] > 0) & (df['loan_amnt'] > 0)},
             {"id": "R5_UTILIZATION", "desc": "Credit utilization ratio must be between 0 and 1", "check": lambda df: df['credit_utilization_ratio'].between(0, 1)},
